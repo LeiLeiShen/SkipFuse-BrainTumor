@@ -1,67 +1,126 @@
-# SkipFuse: Parameter-Efficient Adaptation of SAM-Med3D for Brain Tumor Segmentation
+# Brain Tumor Segmentation with Foundation Model Adaptation
 
-This repository contains the official implementation of **SkipFuse**, a parameter-efficient fine-tuning framework that adapts [SAM-Med3D](https://github.com/uni-medical/SAM-Med3D) for 3D brain tumor segmentation on BraTS2021.
+This repository contains the code for our research on adapting the Segment Anything Model (SAM) for brain tumor segmentation, progressing from 2D architectural innovation to 3D parameter-efficient fine-tuning.
 
-## Overview
+## Research Overview
 
-SkipFuse introduces a hybrid architecture combining the frozen SAM-Med3D ViT-B encoder with a lightweight parallel CNN branch and multi-scale skip connections. Only ~24M parameters are trainable (via LoRA r=16 on the ViT encoder + CNN branch + decoder), while the full SAM-Med3D encoder remains frozen.
+This work addresses a central question: **how to effectively adapt visual foundation models for brain tumor segmentation under limited computational resources?**
 
-**Key results on BraTS2021 (region-based Dice %):**
+We approach this through two stages:
 
-| Method | ET | TC | WT | Mean |
-|--------|------|------|------|------|
-| SAM-Med3D (zero-shot) | 0.3 | 1.0 | 0.9 | 0.7 |
-| SAMed | 56.4 | 71.2 | 74.8 | 67.5 |
-| GBT-SAM | — | — | 83.1 | 83.1* |
-| 3D SAM-adapter | 79.2 | 88.5 | 89.3 | 85.7 |
-| **SkipFuse (Ours)** | **83.2** | **88.8** | **89.5** | **87.4** |
+**Stage 1 — 2D Dual-Encoder Architecture (Paper 1)**
+We propose a dual-encoder architecture combining SAM's pre-trained ViT-B encoder with a ConvNeXt-based CNN encoder, enhanced by Swin-Transformer sub-branches and an adaptive feature fusion mechanism. On the BraTS2020 dataset, this architecture achieves 82.17% mean Dice, outperforming nnU-Net (79.38%) and several transformer-based models. This stage validates that a parallel CNN branch can effectively complement SAM's global features with local spatial details.
 
-*GBT-SAM reports WT-only.
+**Stage 2 — 3D Parameter-Efficient Fine-Tuning (Paper 2)**
+Extending the dual-encoder insight to 3D, we adapt SAM-Med3D for volumetric brain tumor segmentation. We first conduct a systematic PEFT study revealing that encoder-side adaptation saturates rapidly (LoRA r=4 already reaches 99.7% of r=32 performance). We diagnose the bottleneck as the loss of multi-scale spatial information after 16× downsampling to 8³ resolution (25.7% of cases lose all ET voxels). We then propose **HSM3D** (Hybrid SAM-Med3D), which parallels a lightweight 3D CNN branch alongside the frozen ViT encoder and passes multi-scale features to the decoder through skip connections. With only 24M trainable parameters, HSM3D achieves 87.5% mean Dice on BraTS2021.
+
+## Key Results
+
+### Paper 1: 2D Dual-Encoder on BraTS2020
+
+| Model | Dice (%) | Parameters |
+|-------|----------|------------|
+| U-Net | 50.93 | 7.76M |
+| UNETR | 68.09 | 130.79M |
+| Swin-UNETR | 69.44 | 15.57M |
+| nnU-Net | 79.38 | 50.8M |
+| **Conv-Swin-SAM (Ours)** | **82.17** | **52.5M** |
+
+### Paper 2: 3D HSM3D on BraTS2021
+
+| Method | ET | TC | WT | Mean | Trainable Params |
+|--------|------|------|------|------|-----------------|
+| SAM-Med3D (zero-shot) | 0.3 | 1.0 | 0.9 | 0.7 | — |
+| SAMed | 49.2 | 67.8 | 85.5 | 67.5 | 4.35M |
+| GBT-SAM | — | — | 83.1 | — | 16.6M |
+| 3D SAM-adapter | 80.0 | 88.2 | 88.9 | 85.7 | 34.9M |
+| **HSM3D+DS (Ours)** | **83.7** | **89.2** | **89.8** | **87.5** | **24.0M** |
+| nnU-Net (fully supervised) | 86.6 | 91.7 | 94.0 | 90.8 | 31.0M* |
+
+*nnU-Net trains all parameters from scratch with automated architecture search.
 
 ## Architecture
 
+### Paper 1: Conv-Swin-SAM (2D)
+
 ```
-Input (128×128×128, 4ch)
+Input (4-ch MRI, 1024×1024)
+  ├── SAM ViT-B Encoder (progressive unfreezing)
+  │     └── Global semantic features
+  ├── ConvNeXt + Swin-Transformer CNN Branch
+  │     └── Multi-scale local features with adaptive fusion
+  └── Bottleneck (adaptive fusion of both branches)
+        └── U-Net Decoder with deep supervision
+```
+
+### Paper 2: HSM3D (3D)
+
+```
+Input (4-ch MRI, 128³)
   ├── SAM-Med3D ViT-B Encoder (frozen + LoRA r=16)
-  │     └── Multi-scale features via skip connections
-  ├── Parallel CNN Branch (lightweight 3D ConvNet)
-  │     └── Multi-scale features at matching resolutions
-  └── Hybrid Decoder
-        ├── Skip fusion (ViT + CNN features at each scale)
-        └── Progressive upsampling → 3-class segmentation
+  │     └── Global features at 8³ resolution
+  ├── Lightweight 3D CNN Branch
+  │     └── Multi-scale features at 64³, 32³, 16³, 8³
+  └── Bottleneck Fusion + Hybrid Decoder
+        ├── Skip connections (CNN → Decoder)
+        └── Deep supervision → 3-class segmentation (128³)
+```
+
+## Repository Structure
+
+```
+├── README.md
+├── LICENSE
+├── requirements.txt
+├── .gitignore
+│
+├── paper1_2d/                   # Paper 1: 2D dual-encoder
+│   └── conv_swin_sam.ipynb      # Training notebook (Google Colab)
+│
+├── models/                      # Paper 2: 3D model definitions
+│   ├── proto_sam_hybrid.py      # Main HSM3D model
+│   ├── cnn_branch_3d.py         # Parallel CNN branch
+│   ├── hybrid_decoder_3d.py     # Hybrid decoder with skip fusion
+│   ├── lora3d.py                # 3D LoRA injection
+│   ├── patch_embed.py           # 4-channel patch embedding
+│   └── decoders.py              # Decoder variants
+│
+├── segment_anything/            # SAM-Med3D 3D backbone
+├── data_processing/             # Dataset and data loading
+├── utils/                       # Loss functions and metrics
+│
+├── scripts/                     # Training, evaluation, preprocessing
+│   ├── train_hybrid.py          # Main training script
+│   ├── eval_brats_regions.py    # Region-based evaluation
+│   ├── preprocess_brats.py      # Data preprocessing
+│   └── setup_5fold.py           # Cross-validation setup
+│
+├── data/splits/                 # Train/val/test split files
+├── baseline_results/            # Reproduced baseline results (JSON)
+│   ├── gbt_sam/
+│   ├── samed/
+│   └── sam_med3d_vanilla/
+├── results/                     # Our experimental results
+└── docs/                        # Architecture notes
 ```
 
 ## Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/SkipFuse-BrainTumor.git
+git clone https://github.com/LeiLeiShen/SkipFuse-BrainTumor.git
 cd SkipFuse-BrainTumor
 pip install -r requirements.txt
 ```
 
 ### Pre-trained Weights
 
-Download the SAM-Med3D ViT-B checkpoint from [SAM-Med3D releases](https://github.com/uni-medical/SAM-Med3D) and place it in `checkpoints/`:
+**Paper 1 (2D):** Download SAM ViT-B checkpoint from [SAM releases](https://github.com/facebookresearch/segment-anything#model-checkpoints).
 
-```bash
-mkdir -p checkpoints
-# Download sam_med3d_turbo.pth or sam_med3d.pth
-```
+**Paper 2 (3D):** Download SAM-Med3D checkpoint from [SAM-Med3D releases](https://github.com/uni-medical/SAM-Med3D) and place it in `checkpoints/`.
 
-## Data Preparation
+## Usage
 
-1. Download [BraTS2021 Training Data](https://www.synapse.org/#!Synapse:syn27046444/wiki/616571).
-2. Run preprocessing:
-
-```bash
-python scripts/preprocess_brats.py \
-    --data_dir /path/to/BraTS2021_Training_Data \
-    --output_dir data/processed
-```
-
-3. Data splits are provided in `data/splits/`.
-
-## Training
+### Paper 2: Training HSM3D
 
 ```bash
 python scripts/train_hybrid.py \
@@ -69,12 +128,12 @@ python scripts/train_hybrid.py \
     --checkpoint checkpoints/sam_med3d_turbo.pth \
     --lora_r 16 \
     --cnn_channels 32 \
-    --epochs 200 \
+    --epochs 100 \
     --batch_size 2 \
     --lr 1e-4
 ```
 
-## Evaluation
+### Paper 2: Evaluation
 
 ```bash
 python scripts/eval_brats_regions.py \
@@ -82,6 +141,10 @@ python scripts/eval_brats_regions.py \
     --model_path checkpoints/best_model.pth \
     --split_file data/splits/brats2021_split.json
 ```
+
+### Paper 1: 2D Training
+
+See `paper1_2d/conv_swin_sam.ipynb` for the complete training pipeline on Google Colab.
 
 ## Baseline Reproduction
 
@@ -92,29 +155,12 @@ We reproduced several SAM-based baselines for fair comparison. Pre-computed resu
 - [3D SAM-adapter](https://github.com/med-air/3DSAM-adapter) — 3D adapter tuning
 - [GBT-SAM](https://github.com/Lizhecheng02/GBT-SAM) — gradient-based tuning
 
-## Project Structure
-
-```
-├── models/                  # Model definitions
-│   ├── proto_sam_hybrid.py  # Main SkipFuse model
-│   ├── cnn_branch_3d.py     # Parallel CNN branch
-│   ├── hybrid_decoder_3d.py # Hybrid decoder with skip fusion
-│   ├── lora3d.py            # 3D LoRA injection
-│   └── patch_embed.py       # 4-channel patch embedding
-├── segment_anything/        # SAM-Med3D backbone (3D)
-├── data_processing/         # Dataset and data loading
-├── utils/                   # Loss functions and metrics
-├── scripts/                 # Training, evaluation, preprocessing
-├── data/splits/             # Train/val/test split files
-├── baseline_results/        # Reproduced baseline results (JSON)
-└── docs/                    # Architecture notes
-```
-
 ## Citation
 
 ```bibtex
-@mastersthesis{shen2026skipfuse,
-  title={Brain Tumor Segmentation with Foundation Model Adaptation: From 2D Architectural Innovation to 3D Parameter-Efficient Fine-Tuning},
+@mastersthesis{shen2026braintumor,
+  title={Brain Tumor Segmentation with Foundation Model Adaptation:
+         From 2D Architectural Innovation to 3D Parameter-Efficient Fine-Tuning},
   author={Shen, Lei},
   year={2026},
   school={University of Nottingham Ningbo China}
@@ -127,6 +173,6 @@ This project is released under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
-- [SAM-Med3D](https://github.com/uni-medical/SAM-Med3D) for the 3D medical SAM foundation model
-- [Segment Anything](https://github.com/facebookresearch/segment-anything) (Meta AI) for the original SAM architecture
-- BraTS2021 challenge organizers for the dataset
+- [SAM](https://github.com/facebookresearch/segment-anything) and [SAM-Med3D](https://github.com/uni-medical/SAM-Med3D) for the foundation models
+- BraTS challenge organizers for the datasets
+- University of Nottingham Ningbo China for computational resources
