@@ -39,7 +39,7 @@ Extending the dual-encoder insight to 3D, we adapt SAM-Med3D for volumetric brai
 
 *nnU-Net trains all parameters from scratch with automated architecture search.
 
-### 5-Fold Cross-Validation (Paper 2)
+### 5-Fold Cross-Validation (with FP32)
 
 | Method | ET (%) | TC (%) | WT (%) | Mean (%) |
 |--------|--------|--------|--------|----------|
