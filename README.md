@@ -39,6 +39,15 @@ Extending the dual-encoder insight to 3D, we adapt SAM-Med3D for volumetric brai
 
 *nnU-Net trains all parameters from scratch with automated architecture search.
 
+### 5-Fold Cross-Validation (Paper 2)
+
+| Method | ET (%) | TC (%) | WT (%) | Mean (%) |
+|--------|--------|--------|--------|----------|
+| Simple Decoder (r=16, b=0) | 72.76 ± 1.20 | 83.63 ± 1.14 | 86.93 ± 0.61 | 81.10 ± 0.69 |
+| HSM3D (c=32, b=0, r=16) | 83.77 ± 1.01 | 89.00 ± 1.17 | 91.72 ± 0.78 | 88.16 ± 0.71 |
+| HSM3D + DS (c=32) | 83.90 ± 0.97 | 89.41 ± 0.79 | 92.10 ± 0.71 | 88.47 ± 0.59 |
+| HSM3D + DS (c=64) | 84.03 ± 1.02 | 89.35 ± 1.20 | 92.05 ± 0.67 | 88.48 ± 0.73 |
+
 ## Architecture
 
 ### Paper 1: Conv-Swin-SAM (2D)
@@ -153,7 +162,7 @@ We reproduced several SAM-based baselines for fair comparison. Pre-computed resu
 - [SAM-Med3D](https://github.com/uni-medical/SAM-Med3D) — zero-shot evaluation
 - [SAMed](https://github.com/hitachinsk/SAMed) — 2D LoRA-based adaptation
 - [3D SAM-adapter](https://github.com/med-air/3DSAM-adapter) — 3D adapter tuning
-- [GBT-SAM](https://github.com/Lizhecheng02/GBT-SAM) — gradient-based tuning
+- [GBT-SAM](https://github.com/vpulab/med-sam-brain) — gradient-based tuning
 
 ## Citation
 
