@@ -116,8 +116,8 @@ Input (4-ch MRI, 128³)
 ## Installation
 
 ```bash
-git clone https://github.com/LeiLeiShen/SkipFuse-BrainTumor.git
-cd SkipFuse-BrainTumor
+git clone https://github.com/LeiLeiShen/BrainTumor-SAM-Adaptation.git
+cd BrainTumor-SAM-Adaptation
 pip install -r requirements.txt
 ```
 
