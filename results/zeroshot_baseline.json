@@ -1,0 +1,23 @@
+{
+  "experiment": "sam_med3d_zeroshot_baseline",
+  "description": "No LoRA, no training, pretrained encoder + random decoder",
+  "model_params": {
+    "total": 105910468,
+    "trainable": 16132036,
+    "trainable_pct": 15.231767269690472,
+    "lora": 0,
+    "patch_embed": 12583680,
+    "unfrozen_blocks": 0,
+    "decoder": 3548356
+  },
+  "results": {
+    "ET_dice_mean": 0.0057956888214203365,
+    "ET_dice_std": 0.004774521257083323,
+    "TC_dice_mean": 0.011876346832622791,
+    "TC_dice_std": 0.009417194873428847,
+    "WT_dice_mean": 0.03892245183122104,
+    "WT_dice_std": 0.02331880500536949,
+    "mean_dice": 0.018864829161754724
+  },
+  "n_val_cases": 125
+}

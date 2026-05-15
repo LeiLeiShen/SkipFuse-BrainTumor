@@ -1,0 +1,10 @@
+{
+  "method": "GBT-SAM (med-sam-brain)",
+  "region": "WT",
+  "n_cases": 125,
+  "dice_wt": 0.9106,
+  "iou_wt": 0.8663,
+  "total_loss": 0.0211,
+  "checkpoint": "logs/brats2021_wt_2026_04_07_16_42_08/Model/best_dice",
+  "split_file": "/storage/main/users/leishen/Modify_SAM_Med3D/data/splits/brats2021_split.json"
+}

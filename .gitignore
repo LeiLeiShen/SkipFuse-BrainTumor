@@ -1,0 +1,66 @@
+# Data & datasets
+data/BraTS*/
+data/MICCAI*/
+data/nii/
+*.nii
+*.nii.gz
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.zip
+*.tar
+*.tar.gz
+
+# Model weights & checkpoints
+*.pth
+*.pt
+*.ckpt
+checkpoints/
+ckpt/
+weights/
+
+# Experiment logs (keep baseline_results/)
+logs/
+logs_*/
+experiments/
+wandb/
+runs/
+
+# Visualizations (generated)
+visualizations/
+figures/*.png
+figures/*.pdf
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Environment
+brain_tumor_env/
+nnunet_env/
+conda_envs/
+python_libs/
+offline_packages/
+.local/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.Trash-*/
+Thumbs.db

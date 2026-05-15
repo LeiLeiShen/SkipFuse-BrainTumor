@@ -1,0 +1,16 @@
+{
+  "method": "SAMed (2D LoRA-SAM, slice-by-slice)",
+  "input": "FLAIR single-channel \u2192 repeat 3x",
+  "img_size": 256,
+  "lora_rank": 4,
+  "num_classes": 3,
+  "epochs": 200,
+  "n_val": 125,
+  "ET_mean": 0.4924,
+  "ET_std": 0.219,
+  "TC_mean": 0.6781,
+  "TC_std": 0.2387,
+  "WT_mean": 0.8552,
+  "WT_std": 0.1305,
+  "mean_dice": 0.6752
+}
