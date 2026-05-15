@@ -164,6 +164,11 @@ We reproduced several SAM-based baselines for fair comparison. Pre-computed resu
 - [3D SAM-adapter](https://github.com/med-air/3DSAM-adapter) — 3D adapter tuning
 - [GBT-SAM](https://github.com/vpulab/med-sam-brain) — gradient-based tuning
 
+### ⚠️ GBT-SAM Evaluation Note
+
+We identified a bug in GBT-SAM's official evaluation code: it computes Dice per chunk (a few slices at a time) and averages across chunks, rather than computing Dice per 3D volume. This inflates scores because empty chunks (no tumor voxels) receive a Dice of 1.0. The BraTS standard protocol requires computing one Dice score per complete 3D volume, then averaging across cases.
+
+We provide a corrected per-volume evaluation script at `scripts/val_gbt_volume.py`. The corrected WT Dice is **83.1%** (mean ± std: 0.8306 ± 0.1243 over 125 validation cases). Detailed per-case results are in `baseline_results/gbt_sam/results_volume.json`.
 ## Citation
 
 ```bibtex
